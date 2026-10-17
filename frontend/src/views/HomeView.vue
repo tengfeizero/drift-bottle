@@ -1,6 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AvatarBadge from '../components/AvatarBadge.vue'
+import AppModal from '../components/AppModal.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import ThrowBottleModal from '../components/ThrowBottleModal.vue'
 import PickBottleModal from '../components/PickBottleModal.vue'
@@ -25,6 +26,9 @@ const showSettings = ref(false)
 const showPassword = ref(false)
 const showLogout = ref(false)
 const showAuth = ref(false)
+// 登录成功后强制展示防骗提醒；注册流程需等用户确认 ID 并关闭弹窗后再展示
+const showWarning = ref(false)
+const warningPending = ref(false)
 const detailOpen = ref(false)
 const detailId = ref(null)
 
@@ -68,7 +72,17 @@ function openAuth() {
 
 async function onAuthSuccess() {
   await initSession()
+  // 登录弹窗通常已关闭；注册弹窗仍开着时，等用户确认后由 watch 触发
+  if (showAuth.value) warningPending.value = true
+  else showWarning.value = true
 }
+
+watch(showAuth, (open) => {
+  if (!open && warningPending.value) {
+    warningPending.value = false
+    showWarning.value = true
+  }
+})
 
 // 登录态失效或退出后：停掉实时连接并清空瓶子数据
 watch(
@@ -221,6 +235,23 @@ function timeOf(bottle) {
     <SettingsModal v-model:open="showSettings" />
     <PasswordModal v-model:open="showPassword" />
     <AuthModal v-model:open="showAuth" @success="onAuthSuccess" />
+
+    <!-- 登录后的防骗提醒：不可跳过，需用户确认 -->
+    <AppModal :open="showWarning" title="防骗提醒" :closable="false">
+      <p class="safety__lead">网络交友有风险，请务必保护好自己的人身与财产安全。</p>
+      <ul class="safety__list">
+        <li>不要轻信网友的身份、照片和说辞，谨防冒充与情感诈骗。</li>
+        <li>不向对方转账、发红包、代付或充值，拒绝投资、博彩、刷单等邀请。</li>
+        <li>不点击陌生链接，不扫描来历不明的二维码，不安装对方推荐的 App。</li>
+        <li>不透露身份证号、银行卡号、验证码、家庭住址等个人信息。</li>
+        <li>一旦对方索要钱财或诱导投资，请立即停止联系并拉黑。</li>
+      </ul>
+      <template #footer>
+        <button class="btn btn--primary btn--block" type="button" @click="showWarning = false">
+          我已知晓，提高警惕
+        </button>
+      </template>
+    </AppModal>
 
     <ConfirmDialog
       :open="showLogout"
@@ -482,6 +513,25 @@ function timeOf(bottle) {
   height: 8px;
   border-radius: 50%;
   background: var(--danger);
+}
+
+/* ---------- 防骗提醒 ---------- */
+
+.safety__lead {
+  margin-bottom: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--danger);
+}
+
+.safety__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 /* 窄屏：顶栏收紧，用户胶囊只保留头像，给功能入口腾位置 */

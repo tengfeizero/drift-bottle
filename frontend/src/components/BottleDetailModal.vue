@@ -121,6 +121,13 @@ watch(
   },
 )
 
+// 回车发送，Shift+回车换行；输入法组合中的回车不触发发送
+function onEnter(event) {
+  if (event.isComposing || event.shiftKey) return
+  event.preventDefault()
+  send()
+}
+
 async function send() {
   const content = draft.value.trim()
   // 文字可为空，但至少要有一个附件
@@ -193,7 +200,7 @@ async function remove() {
             扔回海里
           </button>
           <button
-            class="icon-btn"
+            class="icon-btn icon-btn--danger"
             type="button"
             aria-label="删除瓶子"
             @click="confirmDelete = true"
@@ -242,12 +249,13 @@ async function remove() {
             @error="errorText = $event"
           />
           <div class="chat-composer__row">
-            <input
+            <textarea
               v-model="draft"
-              class="input"
+              class="input chat-composer__input"
+              rows="3"
               maxlength="500"
-              placeholder="说点什么…"
-              @keyup.enter="send"
+              placeholder="说点什么…（Shift + 回车换行）"
+              @keydown.enter.exact="onEnter"
             />
             <button
               class="btn btn--primary"
@@ -305,6 +313,11 @@ async function remove() {
 .chat-head__action {
   padding: 6px 12px;
   font-size: 13px;
+}
+
+/* 删除按钮：红色警示 */
+.icon-btn--danger {
+  color: var(--danger);
 }
 
 .chat-body {
@@ -401,6 +414,12 @@ async function remove() {
 
 .chat-composer__row .input {
   width: 100%;
+}
+
+/* 三行输入框：固定高度，避免拖拽改变聊天区布局 */
+.chat-composer__input {
+  line-height: 1.5;
+  resize: none;
 }
 
 /* 窄屏：收紧留白，让头部按钮与气泡获得更多空间 */
