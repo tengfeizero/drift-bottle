@@ -1,6 +1,5 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AvatarBadge from '../components/AvatarBadge.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import ThrowBottleModal from '../components/ThrowBottleModal.vue'
@@ -8,6 +7,7 @@ import PickBottleModal from '../components/PickBottleModal.vue'
 import BottleDetailModal from '../components/BottleDetailModal.vue'
 import SettingsModal from '../components/SettingsModal.vue'
 import PasswordModal from '../components/PasswordModal.vue'
+import AuthModal from '../components/AuthModal.vue'
 import { useAuthStore } from '../stores/auth'
 import { useBottleStore, BottleState } from '../stores/bottles'
 import { useToastStore } from '../stores/toast'
@@ -15,7 +15,6 @@ import { createRealtime } from '../api/ws'
 import { formatTime } from '../utils/format'
 import { attachmentLabel } from '../utils/attachment'
 
-const router = useRouter()
 const auth = useAuthStore()
 const bottles = useBottleStore()
 const toast = useToastStore()
@@ -25,19 +24,30 @@ const showPick = ref(false)
 const showSettings = ref(false)
 const showPassword = ref(false)
 const showLogout = ref(false)
+const showAuth = ref(false)
 const detailOpen = ref(false)
 const detailId = ref(null)
 
 let realtime = null
 
 onMounted(async () => {
+  if (auth.isLoggedIn) await initSession()
+})
+
+onBeforeUnmount(stopRealtime)
+
+async function initSession() {
   try {
     await auth.loadMe()
   } catch {
-    return // 登录态失效由全局处理器跳转登录页
+    return // 登录态失效由全局处理器清理
   }
   await bottles.refresh().catch(() => {})
+  startRealtime()
+}
 
+function startRealtime() {
+  if (realtime) return
   realtime = createRealtime({
     onEvent: (event) => bottles.handleEvent(event),
     onStatusChange: (connected) => {
@@ -45,9 +55,30 @@ onMounted(async () => {
     },
   })
   realtime.start()
-})
+}
 
-onBeforeUnmount(() => realtime?.stop())
+function stopRealtime() {
+  realtime?.stop()
+  realtime = null
+}
+
+function openAuth() {
+  showAuth.value = true
+}
+
+async function onAuthSuccess() {
+  await initSession()
+}
+
+// 登录态失效或退出后：停掉实时连接并清空瓶子数据
+watch(
+  () => auth.isLoggedIn,
+  (loggedIn) => {
+    if (loggedIn) return
+    stopRealtime()
+    bottles.$reset()
+  },
+)
 
 function openDetail(id) {
   detailId.value = id
@@ -65,10 +96,20 @@ function openSettingsFromPick() {
 
 async function logout() {
   showLogout.value = false
-  realtime?.stop()
+  stopRealtime()
   await auth.logout()
   toast.success('已退出登录')
-  router.replace({ name: 'login' })
+}
+
+// 未登录时点投放/捞取，先引导登录
+function openThrow() {
+  if (auth.isLoggedIn) showThrow.value = true
+  else openAuth()
+}
+
+function openPick() {
+  if (auth.isLoggedIn) showPick.value = true
+  else openAuth()
 }
 
 function titleOf(bottle) {
@@ -97,39 +138,45 @@ function timeOf(bottle) {
         <span>漂流瓶</span>
       </div>
       <div class="topbar__right">
-        <!-- 用户头像：点击打开资料设置 -->
-        <button class="user-chip" type="button" @click="showSettings = true">
-          <AvatarBadge :src="auth.avatar" :uid="auth.id" :name="auth.nickname" :size="30" />
-          <span class="user-chip__name">{{ auth.nickname }}</span>
-          <i v-if="bottles.unreadCount" class="user-chip__badge">{{ bottles.unreadCount }}</i>
-        </button>
-        <!-- 密码修改 -->
-        <button class="topbar-link" type="button" @click="showPassword = true">修改密码</button>
-        <!-- 安全退出 -->
-        <button class="topbar-link topbar-link--danger" type="button" @click="showLogout = true">
-          安全退出
+        <template v-if="auth.isLoggedIn">
+          <!-- 用户头像：点击打开资料设置 -->
+          <button class="user-chip" type="button" @click="showSettings = true">
+            <AvatarBadge :src="auth.avatar" :uid="auth.id" :name="auth.nickname" :size="30" />
+            <span class="user-chip__name">{{ auth.nickname }}</span>
+            <i v-if="bottles.unreadCount" class="user-chip__badge">{{ bottles.unreadCount }}</i>
+          </button>
+          <!-- 密码修改 -->
+          <button class="topbar-link" type="button" @click="showPassword = true">修改密码</button>
+          <!-- 安全退出 -->
+          <button class="topbar-link topbar-link--danger" type="button" @click="showLogout = true">
+            安全退出
+          </button>
+        </template>
+        <!-- 未登录：点击打开登录 / 注册弹窗 -->
+        <button v-else class="topbar-link topbar-link--primary" type="button" @click="openAuth">
+          登录
         </button>
       </div>
     </header>
 
     <main class="stage">
-      <p class="stage__quota">
+      <p v-if="auth.isLoggedIn" class="stage__quota">
         今日剩余投放 <strong>{{ bottles.quotas.throw_remaining }}</strong> 次 · 捞取
         <strong>{{ bottles.quotas.pick_remaining }}</strong> 次
       </p>
 
       <div class="stage__actions">
-        <button class="action action--throw" type="button" @click="showThrow = true">
+        <button class="action action--throw" type="button" @click="openThrow">
           <span class="action__icon">🍾</span>
           <span class="action__label">扔瓶子</span>
         </button>
-        <button class="action action--pick" type="button" @click="showPick = true">
+        <button class="action action--pick" type="button" @click="openPick">
           <span class="action__icon">🎣</span>
           <span class="action__label">捞瓶子</span>
         </button>
       </div>
 
-      <p v-if="!auth.profileComplete" class="stage__tip" @click="showSettings = true">
+      <p v-if="auth.isLoggedIn && !auth.profileComplete" class="stage__tip" @click="showSettings = true">
         完善性别与年龄后才能捞瓶子，点此设置 ›
       </p>
       <p v-else-if="!bottles.connected" class="stage__tip stage__tip--muted">
@@ -173,6 +220,7 @@ function timeOf(bottle) {
     <BottleDetailModal :open="detailOpen" :bottle-id="detailId" @close="closeDetail" />
     <SettingsModal v-model:open="showSettings" />
     <PasswordModal v-model:open="showPassword" />
+    <AuthModal v-model:open="showAuth" @success="onAuthSuccess" />
 
     <ConfirmDialog
       :open="showLogout"
@@ -240,6 +288,13 @@ function timeOf(bottle) {
 
 .topbar-link--danger {
   color: var(--danger);
+}
+
+.topbar-link--primary {
+  border-color: transparent;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
 }
 
 .user-chip {
@@ -429,8 +484,16 @@ function timeOf(bottle) {
   background: var(--danger);
 }
 
-/* 窄屏顶栏：用户胶囊只保留头像，给功能入口腾位置 */
+/* 窄屏：顶栏收紧，用户胶囊只保留头像，给功能入口腾位置 */
 @media (max-width: 480px) {
+  .topbar {
+    padding: 10px 12px;
+  }
+
+  .brand {
+    font-size: 16px;
+  }
+
   .topbar__right {
     gap: 6px;
   }
@@ -440,11 +503,54 @@ function timeOf(bottle) {
   }
 
   .user-chip {
-    padding-right: 4px;
+    gap: 0;
+    padding: 3px;
   }
 
   .user-chip__name {
     display: none;
+  }
+
+  .stage {
+    gap: 18px;
+    padding: 18px 12px;
+  }
+
+  .stage__quota {
+    text-align: center;
+  }
+
+  .stage__actions {
+    gap: 12px;
+  }
+
+  .action {
+    gap: 8px;
+    padding: 22px 10px;
+    border-radius: 16px;
+  }
+
+  .action__icon {
+    font-size: 26px;
+  }
+
+  .action__label {
+    font-size: 15px;
+  }
+
+  .strip {
+    padding: 10px 0 14px;
+  }
+
+  .strip__list {
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .bottle-card {
+    width: 140px;
+    height: 124px;
+    padding: 10px;
   }
 }
 </style>

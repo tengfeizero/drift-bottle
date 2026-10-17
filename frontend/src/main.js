@@ -11,13 +11,10 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 
-// 登录态失效（凭证过期 / 被退出）：清理本地状态并回到登录页
+// 登录态失效（凭证过期 / 被退出）：清理本地状态并提示重新登录
 setUnauthorizedHandler(() => {
   useAuthStore().reset()
   useToastStore().error('登录已过期，请重新登录')
-  if (router.currentRoute.value.name !== 'login') {
-    router.replace({ name: 'login' })
-  }
 })
 
 app.mount('#app')

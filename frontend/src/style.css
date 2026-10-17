@@ -22,16 +22,31 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   background: var(--bg);
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 全端统一为居中的窄栏布局：桌面端不被拉伸，移动端自动铺满 */
 #app {
+  width: 100%;
+  max-width: 640px;
   min-height: 100svh;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
+}
+
+@media (min-width: 641px) {
+  #app {
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
 }
 
 button {
@@ -332,4 +347,37 @@ p {
 .toast-leave-to {
   opacity: 0;
   transform: translateY(8px);
+}
+
+/* ---------- 小屏适配 ---------- */
+
+@media (max-width: 480px) {
+  .modal-mask {
+    padding: 12px;
+  }
+
+  .modal-card {
+    max-height: 90svh;
+  }
+
+  .modal-head {
+    padding: 14px 16px 8px;
+  }
+
+  .modal-body {
+    padding: 4px 16px 16px;
+  }
+
+  .modal-foot {
+    padding: 0 16px 16px;
+  }
+
+  /* 保证移动端按钮有足够的点击区域 */
+  .btn {
+    min-height: 40px;
+  }
+
+  .toast-host {
+    bottom: 16px;
+  }
 }

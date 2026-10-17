@@ -276,7 +276,8 @@ async function remove() {
 
 <style scoped>
 .chat-card {
-  max-width: 768px;
+  /* 与首页窄栏同宽，桌面端观感一致 */
+  max-width: 640px;
   height: 82svh;
 }
 
@@ -400,5 +401,38 @@ async function remove() {
 
 .chat-composer__row .input {
   width: 100%;
+}
+
+/* 窄屏：收紧留白，让头部按钮与气泡获得更多空间 */
+@media (max-width: 480px) {
+  .chat-card {
+    height: 88svh;
+  }
+
+  .chat-head {
+    gap: 8px;
+    padding: 12px 12px 8px;
+  }
+
+  .chat-head__action {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .chat-body {
+    padding: 12px;
+  }
+
+  .bubble {
+    max-width: 84%;
+  }
+
+  .chat-error {
+    padding: 0 12px;
+  }
+
+  .chat-composer {
+    padding: 8px 12px 12px;
+  }
 }
 </style>

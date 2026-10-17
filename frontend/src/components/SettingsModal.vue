@@ -24,7 +24,7 @@ const GENDERS = [
 
 const nickname = ref('')
 const gender = ref(0)
-const age = ref(0)
+const age = ref(18)
 const saving = ref(false)
 const uploading = ref(false)
 const presetSaving = ref(false)
@@ -37,7 +37,7 @@ watch(
     if (open) {
       nickname.value = auth.nickname
       gender.value = auth.gender
-      age.value = auth.age || 0
+      age.value = auth.age || 18
       errorText.value = ''
     }
   },
