@@ -1,0 +1,49 @@
+# ============ 构建产物 ============
+# 版本化构建输出（含可执行文件与运行数据）
+/dist/
+# 内嵌前端构建产物（由 scripts/build.* 生成）
+/backend/web/dist/
+# 前端构建产物与依赖
+/frontend/dist/
+/frontend/node_modules/
+node_modules/
+
+# ============ Go 编译产物 ============
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# ============ 运行数据与日志 ============
+# 生产部署：与版本目录同级的共享数据/日志目录
+/data/
+/logs/
+# 开发环境：后端默认数据目录（SQLite、JWT 密钥、用户上传文件）
+/backend/data/
+/backend/logs/
+# SQLite 数据库及 WAL/SHM 临时文件（任意目录）
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+# 运行时生成的 JWT 签名密钥
+jwt.key
+# 用户上传文件目录（任意目录）
+uploads/
+*.log
+*.pid
+
+# ============ 编辑器 / 系统 ============
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ============ 环境变量 ============
+.env
+.env.*
+!.env.example
