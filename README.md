@@ -10,6 +10,23 @@
 ![SQLite](https://img.shields.io/badge/SQLite-modernc-003B57?logo=sqlite&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
+## 界面预览
+
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="screenshot/1.png" width="320" alt="首页"><br><sub>首页 · 投放 / 捞取</sub></td>
+    <td align="center" width="50%"><img src="screenshot/2.png" width="320" alt="注册成功"><br><sub>注册成功 · 8 位专属 ID</sub></td>
+  </tr>
+  <tr>
+    <td align="center" width="50%"><img src="screenshot/3.png" width="320" alt="扔瓶子"><br><sub>扔瓶子 · 文字、附件与目标条件</sub></td>
+    <td align="center" width="50%"><img src="screenshot/4.png" width="320" alt="设置"><br><sub>设置 · 生肖头像与个人资料</sub></td>
+  </tr>
+  <tr>
+    <td align="center" width="50%"><img src="screenshot/6.png" width="320" alt="每日配额"><br><sub>首页 · 每日配额与会话提醒</sub></td>
+    <td align="center" width="50%"><img src="screenshot/7.png" width="320" alt="匿名聊天"><br><sub>匿名聊天 · 实时消息与附件</sub></td>
+  </tr>
+</table>
+
 ## 功能特性
 
 - **匿名注册**：无需手机号或邮箱，仅设置密码即可注册，系统随机分配 8 位数字 ID，凭 ID + 密码登录。
